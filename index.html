@@ -174,11 +174,6 @@
   .leaflet-popup-content b { color: #D9A441; }
   .leaflet-container a.leaflet-popup-close-button { color: #948B80; }
 
-
-  /* =========================================================
-     MOBILE RESPONSIVE FIXES — DRAWER / MEDIA SECTORS ONLY
-     Keeps the existing desktop design and structure unchanged.
-     ========================================================= */
   *, *::before, *::after { box-sizing: border-box; }
 
   .drawer-card,
@@ -191,6 +186,17 @@
   }
 
   @media (max-width: 639px) {
+    /* Hero section responsiveness: preserve full video aspect ratio showing all 4 members */
+    #top {
+      min-height: 100svh;
+      padding-top: 5rem;
+    }
+
+    #top video {
+      object-fit: contain;
+      object-position: center 30%;
+    }
+
     /* Prevent any drawer content from creating horizontal overflow. */
     .drawer-accordion {
       width: 100%;
@@ -493,12 +499,12 @@
 
     <!-- HERO SECTION WITH studio1.mp4 BACKDROP -->
     <section id="top" class="relative h-[100svh] min-h-[560px] w-full overflow-hidden flex items-end bg-gradient-to-b from-obsidian via-garnetdeep/30 to-obsidian">
-      <video class="absolute inset-0 w-full h-full object-cover opacity-50" autoplay loop muted playsinline>
+      <video class="absolute inset-0 w-full h-full object-contain sm:object-cover opacity-50 transition-all duration-300" autoplay loop muted playsinline>
         <source src="assets/studio1.mp4" type="video/mp4">
       </video>
-      <div class="absolute inset-0 bg-gradient-to-t from-obsidian via-obsidian/60 to-transparent"></div>
-      <div class="absolute inset-0 bg-gradient-to-r from-garnetdeep/60 via-transparent to-garnet/30 mix-blend-color-dodge"></div>
-      <div class="absolute inset-0 hero-grain"></div>
+      <div class="absolute inset-0 bg-gradient-to-t from-obsidian via-obsidian/60 to-transparent pointer-events-none"></div>
+      <div class="absolute inset-0 bg-gradient-to-r from-garnetdeep/60 via-transparent to-garnet/30 mix-blend-color-dodge pointer-events-none"></div>
+      <div class="absolute inset-0 hero-grain pointer-events-none"></div>
 
       <div class="relative z-10 w-full max-w-7xl mx-auto px-6 md:px-10 pb-16 md:pb-20">
         <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-gold/10 border border-gold/30 backdrop-blur-md mb-4">
@@ -506,9 +512,9 @@
           <span class="font-mono text-xs uppercase text-gold tracking-widest">LIVE TRANSMISSION // KOLKATA</span>
         </div>
         
-        <img src="assets/logo.png" alt="OrPhEuS Logo" class="h-24 sm:h-32 md:h-40 w-auto object-contain filter drop-shadow-[0_10px_25px_rgba(217,164,65,0.3)] mb-4">
+        <img src="assets/logo.png" alt="OrPhEuS Logo" class="h-20 sm:h-32 md:h-40 w-auto object-contain filter drop-shadow-[0_10px_25px_rgba(217,164,65,0.3)] mb-4">
 
-        <div class="mt-6 h-8 md:h-9 flex items-center">
+        <div class="mt-4 sm:mt-6 h-8 md:h-9 flex items-center">
           <span id="typewriter" class="font-sans text-base md:text-lg text-bone/90 tracking-wide"></span><span class="typewriter-caret text-gold">|</span>
         </div>
       </div>
