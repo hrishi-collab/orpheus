@@ -1,0 +1,1588 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OrPhEuS — Official Site</title>
+<meta name="description" content="OrPhEuS — Kolkata rock band. New album, live sessions, gallery and booking.">
+
+<!-- Fonts -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,500&family=Sora:wght@300;400;500;600&family=Noto+Serif+Bengali:wght@500;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+<!-- Tailwind (Play CDN) -->
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        colors: {
+          obsidian:   '#0F0C0A',
+          obsidian2:  '#161210',
+          obsidian3:  '#1E1815',
+          garnet:     '#7A1F2B',
+          garnetdeep: '#3B0E14',
+          gold:       '#D9A441',
+          goldsoft:   '#C9AA76',
+          bone:       '#EDE6DA',
+          smoke:      '#948B80',
+        },
+        fontFamily: {
+          display: ['Fraunces', 'serif'],
+          sans:    ['Sora', 'sans-serif'],
+          bn:      ['"Noto Serif Bengali"', 'serif'],
+          mono:    ['"JetBrains Mono"', 'monospace'],
+        },
+      },
+    },
+  };
+</script>
+
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+<style>
+  html { background: #0F0C0A; }
+  body { overflow-x: hidden; }
+
+  /* Canvas 3D Overlay Container */
+  #webgl-canvas {
+    position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+    pointer-events: none; z-index: 0; opacity: 0.55;
+  }
+
+  /* Nav: solidify on scroll */
+  #site-nav.scrolled {
+    background-color: rgba(15, 12, 10, 0.92);
+    backdrop-filter: blur(16px);
+    border-bottom-color: rgba(217, 164, 65, 0.2);
+    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.7);
+  }
+
+  .hero-grain {
+    pointer-events: none; opacity: 0.05; mix-blend-mode: overlay;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+
+  .scroll-cue { animation: cue-bounce 2.2s ease-in-out infinite; }
+  @keyframes cue-bounce {
+    0%, 100% { transform: translateY(0); opacity: .5; }
+    50%      { transform: translateY(6px); opacity: .9; }
+  }
+
+  .typewriter-caret { animation: caret-blink 0.9s steps(1) infinite; font-weight: 300; }
+  @keyframes caret-blink { 0%, 49% { opacity: 1; } 50%, 100% { opacity: 0; } }
+
+  .marquee-track {
+    display: flex; white-space: nowrap; will-change: transform;
+    animation: marquee-scroll 25s linear infinite;
+  }
+  @keyframes marquee-scroll {
+    0% { transform: translateX(0%); }
+    100% { transform: translateX(-50%); }
+  }
+
+  .glow-title {
+    background: linear-gradient(135deg, #FFFFFF 20%, #D9A441 70%, #C9AA76 100%);
+    -webkit-background-clip: text; background-clip: text;
+    -webkit-text-fill-color: transparent; color: #EDE6DA; display: inline-block;
+  }
+  
+  .glass-card {
+    background: rgba(22, 18, 16, 0.75); backdrop-filter: blur(16px);
+    border: 1px solid rgba(217, 164, 65, 0.2);
+  }
+
+  /* ACCORDION GALLERY STYLES */
+  .drawer-accordion {
+    display: flex; flex-direction: column; gap: 1.25rem; width: 100%;
+  }
+
+  .drawer-card {
+    position: relative; overflow: hidden; border-radius: 20px;
+    background: rgba(22, 18, 16, 0.9);
+    border: 1px solid rgba(217, 164, 65, 0.25);
+    transition: all 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+    height: 120px;
+  }
+
+  .drawer-card:hover {
+    border-color: rgba(217, 164, 65, 0.5);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8), 0 0 20px rgba(217, 164, 65, 0.1);
+  }
+  
+  .drawer-card.expanded {
+    height: auto; min-height: 590px; border-color: rgba(217, 164, 65, 0.8);
+    box-shadow: 0 25px 60px rgba(0, 0, 0, 0.95), 0 0 35px rgba(217, 164, 65, 0.2);
+  }
+
+  .drawer-card .collapsed-header {
+    transition: opacity 0.4s ease, transform 0.4s ease;
+  }
+  .drawer-card.expanded .collapsed-header {
+    opacity: 0; pointer-events: none; transform: translateY(-10px);
+  }
+
+  .drawer-card .expanded-content {
+    opacity: 0; visibility: hidden; pointer-events: none;
+    transition: opacity 0.4s ease 0.15s, transform 0.4s ease 0.15s;
+    transform: translateY(10px);
+  }
+  .drawer-card.expanded .expanded-content {
+    opacity: 1; visibility: visible; pointer-events: auto;
+    transform: translateY(0);
+  }
+
+  /* Custom Scrollbar */
+  .custom-scrollbar::-webkit-scrollbar { width: 5px; height: 5px; }
+  .custom-scrollbar::-webkit-scrollbar-track { background: rgba(15, 12, 10, 0.6); }
+  .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(217, 164, 65, 0.4); border-radius: 4px; }
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(217, 164, 65, 0.8); }
+
+  /* Vinyl Disc Animation for Player */
+  .vinyl-disc { transition: transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1); }
+  .group:hover .vinyl-disc { transform: translateX(45px) rotate(45deg); }
+  .is-playing .vinyl-disc { animation: vinyl-spin 4s linear infinite; transform: translateX(45px); }
+  @keyframes vinyl-spin { 100% { transform: translateX(45px) rotate(360deg); } }
+
+  .eq-bar {
+    width: 3px; background: #D9A441; border-radius: 2px;
+    animation: eq-bounce 1s ease-in-out infinite alternate;
+  }
+  .eq-bar:nth-child(1) { height: 60%; animation-delay: 0.1s; }
+  .eq-bar:nth-child(2) { height: 100%; animation-delay: 0.3s; }
+  .eq-bar:nth-child(3) { height: 40%; animation-delay: 0.2s; }
+  .eq-bar:nth-child(4) { height: 80%; animation-delay: 0.4s; }
+  @keyframes eq-bounce { 0% { transform: scaleY(0.3); } 100% { transform: scaleY(1); } }
+
+  .field {
+    width: 100%; background: rgba(15, 12, 10, 0.7); backdrop-filter: blur(8px);
+    border: 1px solid rgba(217, 164, 65, 0.2); border-radius: 6px; padding: 0.95rem 1.1rem;
+    color: #EDE6DA; font-family: 'Sora', sans-serif; font-size: 0.95rem; transition: all 0.3s ease;
+  }
+  .field::placeholder { color: #948B80; }
+  .field:focus { outline: none; border-color: #D9A441; box-shadow: 0 0 14px rgba(217,164,65,0.3); background: rgba(15,12,10,0.95); }
+
+  .press-quote { border-left: 3px solid #D9A441; padding-left: 1.25rem; transition: transform 0.3s ease; }
+  .press-quote:hover { transform: translateX(6px); }
+
+  #map { height: 420px; background: #161210; }
+  #map .leaflet-tile-pane { filter: invert(1) hue-rotate(180deg) brightness(0.9) contrast(0.95) saturate(0.5); }
+  .leaflet-popup-content-wrapper { background: #161210; color: #EDE6DA; border-radius: 4px; border: 1px solid rgba(217, 164, 65, 0.4); }
+  .leaflet-popup-tip { background: #161210; }
+  .leaflet-popup-content b { color: #D9A441; }
+  .leaflet-container a.leaflet-popup-close-button { color: #948B80; }
+
+
+  /* =========================================================
+     MOBILE RESPONSIVE FIXES — DRAWER / MEDIA SECTORS ONLY
+     Keeps the existing desktop design and structure unchanged.
+     ========================================================= */
+  *, *::before, *::after { box-sizing: border-box; }
+
+  .drawer-card,
+  .drawer-card > *,
+  .expanded-content,
+  .expanded-content > *,
+  .side-playlist-item,
+  .sector-item-card {
+    min-width: 0;
+  }
+
+  @media (max-width: 639px) {
+    /* Prevent any drawer content from creating horizontal overflow. */
+    .drawer-accordion {
+      width: 100%;
+      min-width: 0;
+    }
+
+    /* Let the expanded sector size itself to its real mobile content
+       instead of inheriting the desktop minimum height. */
+    .drawer-card.expanded {
+      height: auto;
+      min-height: 0;
+    }
+
+    .drawer-card .collapsed-header {
+      padding: 1rem;
+      gap: 0.75rem;
+    }
+
+    .drawer-card .collapsed-header > .flex:first-child {
+      gap: 0.75rem;
+      min-width: 0;
+      flex: 1 1 auto;
+    }
+
+    .drawer-card .collapsed-header > .flex:first-child > div {
+      min-width: 0;
+    }
+
+    .drawer-card .collapsed-header > .flex:last-child {
+      gap: 0.5rem;
+      flex: 0 0 auto;
+    }
+
+    .drawer-card .collapsed-header > .flex:last-child > span {
+      max-width: 86px;
+      text-align: center;
+      line-height: 1.25;
+    }
+
+    .drawer-card .expanded-content {
+      padding: 1rem;
+      gap: 1rem;
+      width: 100%;
+      min-width: 0;
+    }
+
+    .drawer-card .expanded-content > .flex {
+      min-width: 0;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+    }
+
+    .drawer-card .expanded-content .inspect-sector-btn {
+      margin-left: auto;
+      max-width: 100%;
+      white-space: nowrap;
+    }
+
+    .drawer-card .expanded-content .grid {
+      grid-template-columns: minmax(0, 1fr);
+      min-width: 0;
+    }
+
+    .drawer-card .expanded-content .grid > div,
+    .drawer-card .expanded-content .grid video,
+    .drawer-card .expanded-content .grid img {
+      min-width: 0;
+      max-width: 100%;
+    }
+
+    .drawer-card .expanded-content .sector-item-card {
+      min-width: 0;
+      width: 100%;
+    }
+
+    .drawer-card .expanded-content .sector-item-card > div:first-child {
+      min-width: 0;
+      flex: 1 1 auto;
+    }
+
+    .drawer-card .expanded-content .sector-item-card > div:first-child > div:last-child {
+      min-width: 0;
+    }
+
+    /* The fixed inspector becomes a true edge-to-edge mobile sheet. */
+    #side-drawer {
+      width: 100vw;
+      max-width: 100vw;
+      padding:
+        max(1rem, env(safe-area-inset-top))
+        max(1rem, env(safe-area-inset-right))
+        max(1rem, env(safe-area-inset-bottom))
+        max(1rem, env(safe-area-inset-left));
+      overflow-x: hidden;
+      overscroll-behavior: contain;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    #side-drawer > div {
+      min-width: 0;
+    }
+
+    #side-drawer .space-y-6 {
+      min-width: 0;
+    }
+
+    #side-drawer > div:first-child > .flex.items-center.justify-between {
+      min-width: 0;
+      gap: 0.75rem;
+    }
+
+    #drawer-media-index {
+      min-width: 0;
+      line-height: 1.3;
+    }
+
+    #drawer-media-container {
+      width: 100%;
+      max-width: 100%;
+      aspect-ratio: 16 / 9;
+    }
+
+    #drawer-title,
+    #drawer-desc {
+      overflow-wrap: anywhere;
+    }
+
+    #drawer-playlist-container {
+      max-width: 100%;
+      min-width: 0;
+      max-height: 42vh;
+    }
+
+    #side-playlist-header {
+      min-width: 0;
+      line-height: 1.3;
+      overflow-wrap: anywhere;
+    }
+
+    #side-drawer > div:last-child {
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      align-items: stretch;
+    }
+
+    #close-drawer-footer-btn {
+      width: 100%;
+    }
+
+    .side-playlist-item {
+      width: 100%;
+      max-width: 100%;
+      min-width: 0;
+    }
+
+    .side-playlist-item > div:first-child {
+      min-width: 0;
+      flex: 1 1 auto;
+    }
+
+    .side-playlist-item > div:first-child > div:last-child {
+      min-width: 0;
+    }
+
+    /* Keep the gallery area itself from ever widening the mobile viewport. */
+    #gallery,
+    #gallery > div,
+    #drawer-accordion-container {
+      min-width: 0;
+      max-width: 100%;
+    }
+  }
+
+  @media (max-width: 380px) {
+    .drawer-card .collapsed-header {
+      padding: 0.875rem;
+    }
+
+    .drawer-card .collapsed-header > .flex:first-child > span {
+      padding-left: 0.625rem;
+      padding-right: 0.625rem;
+    }
+
+    .drawer-card .collapsed-header > .flex:first-child > div > span:first-child {
+      font-size: 1.05rem;
+    }
+
+    .drawer-card .collapsed-header > .flex:last-child > span {
+      max-width: 72px;
+      padding-left: 0.5rem;
+      padding-right: 0.5rem;
+    }
+
+    .drawer-card .expanded-content {
+      padding: 0.875rem;
+    }
+
+    .drawer-card .expanded-content .inspect-sector-btn {
+      padding-left: 0.75rem;
+      padding-right: 0.75rem;
+    }
+  }
+</style>
+</head>
+
+<body class="bg-obsidian text-bone font-sans antialiased selection:bg-garnet selection:text-bone relative">
+
+  <!-- 3D Interactive WebGL Canvas -->
+  <canvas id="webgl-canvas"></canvas>
+
+  <!-- BACK TO TOP BUTTON -->
+  <button id="back-to-top" aria-label="Back to top"
+          class="fixed bottom-6 right-6 z-50 w-12 h-12 rounded-full bg-obsidian2/90 border border-gold/40 text-gold shadow-2xl backdrop-blur-md opacity-0 pointer-events-none transition-all duration-300 flex items-center justify-center hover:bg-gold hover:text-obsidian hover:scale-110">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 15l7-7 7 7"/></svg>
+  </button>
+
+  <!-- FIXED FULL RESPONSIVE SIDE DRAWER INSPECT PANEL -->
+  <div id="side-drawer" class="fixed inset-y-0 right-0 z-[100] w-full sm:w-[540px] bg-obsidian2/95 border-l border-gold/30 shadow-[0_0_80px_rgba(0,0,0,0.95)] backdrop-blur-2xl translate-x-full transition-transform duration-500 ease-out flex flex-col justify-between p-6 sm:p-8 overflow-y-auto custom-scrollbar">
+    <div class="space-y-6">
+      <div class="flex items-center justify-between pb-4 border-b border-white/10">
+        <span class="font-mono text-xs uppercase tracking-widest text-gold" id="drawer-media-index">SECTOR INSPECTION</span>
+        <button id="close-drawer-btn" class="text-smoke hover:text-gold transition-colors p-2">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+        </button>
+      </div>
+
+      <!-- Media Container -->
+      <div id="drawer-media-container" class="relative w-full aspect-video rounded-xl overflow-hidden border border-gold/30 bg-black shadow-2xl flex items-center justify-center">
+      </div>
+
+      <div>
+        <h3 id="drawer-title" class="font-display text-2xl sm:text-3xl text-bone glow-title mb-2">Title</h3>
+        <p id="drawer-desc" class="text-smoke text-sm leading-relaxed font-sans mb-4">Description text.</p>
+      </div>
+
+      <!-- Playlist Section -->
+      <div class="space-y-3">
+        <div class="flex items-center justify-between">
+          <span id="side-playlist-header" class="font-mono text-xs uppercase tracking-widest text-goldsoft">SECTOR MEDIA PLAYLIST</span>
+          <span class="font-mono text-[10px] text-smoke uppercase">SELECT ITEM</span>
+        </div>
+        <div id="drawer-playlist-container" class="space-y-2 max-h-52 overflow-y-auto pr-1 custom-scrollbar">
+        </div>
+      </div>
+    </div>
+
+    <div class="pt-6 border-t border-white/10 flex items-center justify-between mt-6">
+      <span class="font-bn text-sm text-smoke">অরফিয়াস ভিজ্যুয়াল আর্কাইভ</span>
+      <button id="close-drawer-footer-btn" class="px-5 py-2 rounded-full bg-gold/10 border border-gold/40 text-gold font-mono text-xs uppercase hover:bg-gold hover:text-obsidian transition-colors">
+        Close Inspector
+      </button>
+    </div>
+  </div>
+
+  <!-- DRAWER OVERLAY BACKDROP -->
+  <div id="drawer-backdrop" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-[90] opacity-0 pointer-events-none transition-opacity duration-300"></div>
+
+  <!-- ================= NAV ================= -->
+  <header id="site-nav" class="fixed top-0 left-0 w-full z-50 transition-all duration-500 border-b border-white/0">
+    <div class="max-w-7xl mx-auto px-6 md:px-10 h-20 flex items-center justify-between">
+      <a href="#top" class="flex items-center gap-3 group">
+        <img src="assets/logo.png" alt="OrPhEuS Logo" class="h-10 w-auto object-contain group-hover:scale-105 transition-transform duration-300">
+      </a>
+
+      <nav class="hidden md:flex items-center gap-10 text-[15px] font-sans text-bone/80">
+        <a href="#gallery" class="hover:text-gold transition-colors">Gallery</a>
+        <a href="#listen" class="hover:text-gold transition-colors">Listen</a>
+        <a href="#about" class="hover:text-gold transition-colors">About</a>
+        <a href="#band" class="hover:text-gold transition-colors">Band</a>
+        <a href="#contact" class="hover:text-gold transition-colors">Contact</a>
+      </nav>
+
+      <div class="flex items-center gap-5">
+        <div class="hidden sm:flex items-center gap-4">
+          <a href="https://www.instagram.com/orpheus.true/?hl=en" target="_blank" rel="noopener noreferrer" aria-label="Instagram" class="text-bone/60 hover:text-gold transition-all transform hover:scale-110">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.2" cy="6.8" r="1"/></svg>
+          </a>
+          <a href="https://www.facebook.com/share/18BmBkiksw/" target="_blank" rel="noopener noreferrer" aria-label="Facebook" class="text-bone/60 hover:text-gold transition-all transform hover:scale-110">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M15 3h-2a4 4 0 0 0-4 4v3H7v4h2v7h4v-7h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg>
+          </a>
+        </div>
+
+        <button id="menu-btn" class="md:hidden text-bone/80 p-2" aria-label="Open menu">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path stroke-linecap="round" d="M4 7h16M4 12h16M4 17h16"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- Mobile menu -->
+    <div id="mobile-menu" class="hidden md:hidden bg-obsidian2/95 backdrop-blur-md border-t border-white/5 px-6 py-6 space-y-5 text-base">
+      <a href="#gallery" class="block text-bone/85">Gallery</a>
+      <a href="#listen" class="block text-bone/85">Listen</a>
+      <a href="#about" class="block text-bone/85">About</a>
+      <a href="#band" class="block text-bone/85">Band</a>
+      <a href="#contact" class="block text-bone/85">Contact</a>
+    </div>
+  </header>
+
+  <div class="relative z-10">
+
+    <!-- HERO SECTION WITH studio1.mp4 BACKDROP -->
+    <section id="top" class="relative h-[100svh] min-h-[560px] w-full overflow-hidden flex items-end bg-gradient-to-b from-obsidian via-garnetdeep/30 to-obsidian">
+      <video class="absolute inset-0 w-full h-full object-cover opacity-50" autoplay loop muted playsinline>
+        <source src="assets/studio1.mp4" type="video/mp4">
+      </video>
+      <div class="absolute inset-0 bg-gradient-to-t from-obsidian via-obsidian/60 to-transparent"></div>
+      <div class="absolute inset-0 bg-gradient-to-r from-garnetdeep/60 via-transparent to-garnet/30 mix-blend-color-dodge"></div>
+      <div class="absolute inset-0 hero-grain"></div>
+
+      <div class="relative z-10 w-full max-w-7xl mx-auto px-6 md:px-10 pb-16 md:pb-20">
+        <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-gold/10 border border-gold/30 backdrop-blur-md mb-4">
+          <span class="w-2 h-2 rounded-full bg-gold animate-ping"></span>
+          <span class="font-mono text-xs uppercase text-gold tracking-widest">LIVE TRANSMISSION // KOLKATA</span>
+        </div>
+        
+        <img src="assets/logo.png" alt="OrPhEuS Logo" class="h-24 sm:h-32 md:h-40 w-auto object-contain filter drop-shadow-[0_10px_25px_rgba(217,164,65,0.3)] mb-4">
+
+        <div class="mt-6 h-8 md:h-9 flex items-center">
+          <span id="typewriter" class="font-sans text-base md:text-lg text-bone/90 tracking-wide"></span><span class="typewriter-caret text-gold">|</span>
+        </div>
+      </div>
+
+      <a href="#gallery" aria-label="Scroll down" class="absolute bottom-6 right-6 md:right-10 z-10 text-bone/50 hover:text-gold transition-colors scroll-cue">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v15m0 0l-6-6m6 6l6-6"/></svg>
+      </a>
+    </section>
+
+    <!-- TICKER BAR -->
+    <div class="w-full bg-garnetdeep/80 border-y border-gold/20 py-2.5 overflow-hidden backdrop-blur-md">
+      <div class="marquee-track font-mono text-xs text-goldsoft/90 tracking-widest uppercase flex gap-12">
+        <span>✦ NEW SINGLE "JOTUGRIHO" DROPPING SOON</span>
+        <span>✦ LIVE AT KOLKATA MUSIC FESTIVAL 2026</span>
+        <span>✦ ALBUM PRE-SAVE AVAILABLE NOW</span>
+        <span>✦ ORPHEUS ACOUSTIC ARCHIVE LIVE</span>
+      </div>
+    </div>
+
+    <!-- GALLERY SECTION -->
+    <section id="gallery" class="py-24 md:py-32 bg-gradient-to-b from-obsidian via-[#171210] to-obsidian border-t border-white/5 relative overflow-hidden">
+      <div class="max-w-6xl mx-auto px-6 md:px-10 mb-12 flex items-center justify-between flex-wrap gap-4">
+        <div>
+          <span class="font-mono text-xs uppercase tracking-widest text-gold block mb-1">✦ VISUAL DRAWERS</span>
+          <h2 class="font-display text-3xl md:text-5xl text-bone glow-title">Media Sectors</h2>
+          <p class="text-xs text-smoke font-mono mt-2">Click + to expand drawer · Auto-collapses on inactivity</p>
+        </div>
+        <div class="glass-card px-4 py-2 rounded-lg border border-gold/20 flex items-center gap-3 font-mono text-xs">
+          <span class="text-gold tracking-widest uppercase">4 SECTORS: LIVE · STUDIO · PHOTOS · COVERS</span>
+          <span class="w-2 h-2 rounded-full bg-gold animate-pulse"></span>
+        </div>
+      </div>
+
+      <div class="max-w-6xl mx-auto px-6 md:px-10">
+        <div id="drawer-accordion-container" class="drawer-accordion">
+        </div>
+      </div>
+    </section>
+
+    <!-- LISTEN SECTION -->
+    <section id="listen" class="py-24 md:py-32 border-y border-white/10 bg-gradient-to-b from-obsidian via-garnetdeep/40 to-obsidian relative overflow-hidden">
+      <div class="max-w-5xl mx-auto px-6 md:px-10 relative z-10">
+        <div class="text-center max-w-xl mx-auto mb-12">
+          <span class="font-mono text-xs uppercase tracking-widest text-gold block mb-2">✦ OFFICIAL SOUNDTRACK PREVIEW</span>
+          <h2 class="font-display text-4xl md:text-5xl text-bone glow-title">Now Streaming</h2>
+          <p class="text-smoke text-sm mt-2 font-bn">অরফিয়াস - Sound of the Kolkata Underworld</p>
+        </div>
+
+        <div id="player-container" class="glass-card p-6 md:p-10 rounded-2xl border border-gold/25 shadow-2xl flex flex-col md:flex-row items-center gap-10 md:gap-14">
+          <div class="relative group shrink-0 py-2">
+            <div class="vinyl-disc absolute top-3 right-0 w-44 h-44 sm:w-56 sm:h-56 rounded-full bg-gradient-to-tr from-black via-[#1a1715] to-black border-4 border-obsidian shadow-2xl flex items-center justify-center pointer-events-none z-0">
+              <div class="w-16 h-16 rounded-full border border-gold/30 bg-garnetdeep flex items-center justify-center">
+                <div class="w-4 h-4 rounded-full bg-gold"></div>
+              </div>
+            </div>
+
+            <div class="relative z-10 w-48 h-48 sm:w-60 sm:h-60 rounded-xl overflow-hidden border border-gold/40 shadow-[0_10px_30px_rgba(0,0,0,0.8)] bg-obsidian2 group-hover:scale-[1.02] transition-transform duration-500">
+              <img src="assets/orpheus.jpeg" alt="OrPhEuS album cover" class="w-full h-full object-cover">
+              <div class="absolute inset-0 bg-gradient-to-t from-obsidian/80 via-transparent to-transparent"></div>
+              <span class="absolute bottom-3 left-3 font-mono text-[10px] uppercase text-gold/90 bg-obsidian/90 px-2 py-0.5 rounded border border-gold/20">STEREO SNIPPET</span>
+            </div>
+          </div>
+
+          <div class="w-full flex-1">
+            <div class="flex items-center justify-between mb-3 flex-wrap gap-2">
+              <div>
+                <span class="font-bn text-lg text-goldsoft/90">অ্যালবাম</span>
+                <h3 class="font-display text-3xl md:text-4xl text-bone glow-title leading-tight">Hawar Sathe Hanti</h3>
+              </div>
+              <span id="audio-status-badge" class="font-mono text-[11px] uppercase text-gold border border-gold/30 px-3 py-1 rounded-full bg-gold/10 backdrop-blur-md">PLAYER READY</span>
+            </div>
+            
+            <p class="text-smoke text-sm mb-6">Album snippet — official release coming soon across all platforms.</p>
+
+            <div class="bg-obsidian2/80 p-5 rounded-xl border border-gold/20 shadow-inner flex flex-col gap-4">
+              <div class="flex items-center gap-5">
+                <button id="play-btn" aria-label="Play snippet" class="shrink-0 w-16 h-16 rounded-full bg-gradient-to-tr from-garnet to-gold flex items-center justify-center text-obsidian font-bold hover:scale-105 transition-all shadow-[0_0_20px_rgba(217,164,65,0.4)]">
+                  <svg id="play-icon" width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+                  <svg id="pause-icon" class="hidden" width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M6 5h4v14H6zM14 5h4v14h-4z"/></svg>
+                </button>
+
+                <div class="flex-1">
+                  <div class="flex items-center justify-between text-xs text-smoke font-mono mb-2">
+                    <span id="time-current">0:00</span>
+                    <div id="equalizer" class="hidden flex items-end gap-1 h-4">
+                      <div class="eq-bar"></div><div class="eq-bar"></div><div class="eq-bar"></div><div class="eq-bar"></div>
+                    </div>
+                    <span id="time-duration">0:00</span>
+                  </div>
+
+                  <div id="progress-track" class="h-2.5 w-full bg-white/10 rounded-full cursor-pointer relative overflow-hidden group/bar">
+                    <div id="progress-fill" class="h-full bg-gradient-to-r from-goldsoft via-gold to-amber-300 rounded-full transition-all duration-100 shadow-[0_0_10px_#D9A441]" style="width:0%"></div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="flex items-center justify-between pt-2 border-t border-white/5 font-mono text-[11px] text-smoke">
+                <span id="audio-live-indicator" class="text-gold/80">AUDIO ENGINE: IDLE</span>
+                <span class="text-goldsoft">44.1kHz / 24-bit PCM</span>
+              </div>
+            </div>
+
+            <audio id="audio-player" src="assets/snippet.mp3" preload="metadata"></audio>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ABOUT SECTION -->
+    <section id="about" class="py-28 md:py-36 border-b border-white/10 bg-gradient-to-b from-obsidian via-[#17120F] to-obsidian relative overflow-hidden">
+      <div class="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[350px] bg-garnetdeep/30 rounded-full blur-[140px] pointer-events-none"></div>
+      <div class="absolute bottom-10 right-10 w-[300px] h-[300px] bg-gold/5 rounded-full blur-[100px] pointer-events-none"></div>
+
+      <div class="max-w-6xl mx-auto px-6 md:px-10 relative z-10 grid lg:grid-cols-[1fr_1.25fr] gap-12 lg:gap-16 items-center">
+        
+        <div class="space-y-6">
+          <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-gold/10 border border-gold/30 backdrop-blur-md">
+            <span class="w-1.5 h-1.5 rounded-full bg-gold"></span>
+            <span class="font-mono text-xs uppercase text-gold tracking-widest">✦ BIOGRAPHY & ESSENCE</span>
+          </div>
+
+          <div class="relative">
+            <span class="font-bn text-7xl md:text-8xl text-gold/5 absolute -top-10 -left-4 select-none pointer-events-none">অরফিয়াস</span>
+            <p class="font-bn text-2xl text-goldsoft mb-1 relative z-10">সম্পর্কে</p>
+            <h2 class="font-display text-4xl sm:text-5xl md:text-6xl leading-[1.08] text-bone glow-title relative z-10">
+              A band from Kolkata,<br><span class="italic text-goldsoft">chasing the underworld.</span>
+            </h2>
+          </div>
+
+          <div class="grid grid-cols-3 gap-3 pt-2">
+            <div class="glass-card p-3.5 rounded-xl border border-gold/20 text-center">
+              <span class="block font-mono text-[10px] text-smoke uppercase tracking-wider">ORIGIN</span>
+              <span class="font-display text-sm md:text-base text-gold">Kolkata, IN</span>
+            </div>
+            <div class="glass-card p-3.5 rounded-xl border border-gold/20 text-center">
+              <span class="block font-mono text-[10px] text-smoke uppercase tracking-wider">LYRICS</span>
+              <span class="font-display text-sm md:text-base text-gold">ENG + BENGALI</span>
+            </div>
+            <div class="glass-card p-3.5 rounded-xl border border-gold/20 text-center">
+              <span class="block font-mono text-[10px] text-smoke uppercase tracking-wider">GENRE</span>
+              <span class="font-display text-sm md:text-base text-gold">DARK ACOUSTIC</span>
+            </div>
+          </div>
+
+          <div class="p-5 rounded-xl bg-obsidian2/90 border border-gold/25 shadow-2xl relative overflow-hidden group">
+            <div class="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-gold via-goldsoft to-garnet"></div>
+            <div class="flex items-center justify-between mb-2">
+              <span class="text-smoke font-mono text-[11px] uppercase tracking-wider">BAND PHILOSOPHY //</span>
+              <span class="w-2 h-2 rounded-full bg-gold/70 animate-pulse"></span>
+            </div>
+            <p id="about-cycler" class="text-bone font-sans font-medium text-base sm:text-lg transition-opacity duration-300 italic">
+              "Creating dark, raw acoustic depth."
+            </p>
+          </div>
+        </div>
+
+        <div class="glass-card p-8 sm:p-10 rounded-2xl border border-gold/25 shadow-2xl space-y-6 relative">
+          <div class="absolute top-0 left-0 w-6 h-6 border-t-2 border-l-2 border-gold/60 rounded-tl-2xl pointer-events-none"></div>
+          <div class="absolute bottom-0 right-0 w-6 h-6 border-b-2 border-r-2 border-gold/60 rounded-br-2xl pointer-events-none"></div>
+
+          <div class="border-b border-white/10 pb-4 flex items-center justify-between">
+            <span class="font-mono text-xs uppercase tracking-widest text-goldsoft">THE ORPHEUS MYTHOLOGY</span>
+            <span class="font-mono text-[10px] text-smoke">4-PIECE OUTFIT</span>
+          </div>
+
+          <div class="space-y-4 text-bone/90 text-[16px] sm:text-[17px] leading-relaxed">
+            <p class="first-letter:text-4xl first-letter:font-display first-letter:text-gold first-letter:float-left first-letter:mr-3 first-letter:leading-none">
+              We're an independent outfit carving out our own space in the modern rock landscape — four musicians who met in Kolkata's underground scene and stayed for the noise.
+            </p>
+            <p>
+              <strong class="text-gold font-medium">OrPhEuS</strong> borrows its name from the myth: a musician who walks directly into the dark to bring something back. That is the essence of our record — darker thematic explorations, raw acoustic depths, and cinematic soundscapes built to be played loud, alone, at night.
+            </p>
+            <p class="text-bone/80">
+              We write seamlessly in English and Bengali, record in whatever room will have us, and play every show like it's the last one before the lights go out.
+            </p>
+          </div>
+
+          <div class="pt-4 border-t border-white/10 flex flex-wrap gap-2 text-[11px] font-mono text-goldsoft">
+            <span class="px-3 py-1 rounded-md bg-gold/10 border border-gold/20">✦ RAW ACOUSTIC TEXTURES</span>
+            <span class="px-3 py-1 rounded-md bg-gold/10 border border-gold/20">✦ CINEMATIC ROCK</span>
+            <span class="px-3 py-1 rounded-md bg-gold/10 border border-gold/20">✦ UNFILTERED SOUND</span>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- BAND / MEMBERS SECTION -->
+    <section id="band" class="py-24 md:py-36 bg-gradient-to-b from-obsidian via-garnetdeep/30 to-obsidian border-b border-white/10 relative overflow-hidden">
+      <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[350px] bg-garnetdeep/25 rounded-full blur-[160px] pointer-events-none"></div>
+
+      <div class="max-w-7xl mx-auto px-6 md:px-10 relative z-10">
+        <div class="flex flex-col md:flex-row md:items-end justify-between mb-16 gap-6">
+          <div>
+            <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-gold/10 border border-gold/30 backdrop-blur-md mb-3">
+              <span class="w-1.5 h-1.5 rounded-full bg-gold"></span>
+              <span class="font-mono text-xs uppercase text-gold tracking-widest">✦ THE ROSTER</span>
+            </div>
+            <h2 class="font-display text-4xl sm:text-5xl md:text-6xl text-bone glow-title">The Band</h2>
+            <p class="text-xs sm:text-sm text-smoke font-mono mt-2">4 ACTIVE MEMBERS // RECORDING & LIVE CORE</p>
+          </div>
+          
+          <div class="glass-card px-5 py-3 rounded-xl border border-gold/20 flex items-center gap-4 self-start md:self-auto">
+            <span class="font-mono text-xs text-goldsoft uppercase tracking-wider">KOLKATA UNDERGROUND ROSTER</span>
+            <span class="w-2 h-2 rounded-full bg-gold animate-ping"></span>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8">
+          
+          <!-- Member 1: Shovik -->
+          <div class="group glass-card rounded-2xl overflow-hidden border border-gold/20 hover:border-gold/80 transition-all duration-500 hover:-translate-y-2.5 hover:shadow-[0_20px_50px_rgba(217,164,65,0.18)] flex flex-col justify-between relative">
+            <div class="absolute top-3 right-3 z-20 font-mono text-xs text-gold font-bold bg-obsidian/90 px-3 py-1 rounded-md border border-gold/30 shadow-md">01</div>
+            
+            <div class="relative w-full aspect-[4/5] overflow-hidden bg-obsidian2">
+              <img src="assets/member1.png" alt="Shovik" class="w-full h-full object-cover filter grayscale contrast-110 group-hover:grayscale-0 group-hover:scale-105 transition-all duration-700 ease-out">
+              <div class="absolute inset-0 bg-gradient-to-t from-obsidian via-obsidian/30 to-transparent"></div>
+              <div class="absolute bottom-3 left-3 z-10">
+                <span class="font-mono text-[10px] text-gold uppercase tracking-widest px-2.5 py-1 rounded bg-obsidian/90 backdrop-blur-md border border-gold/30 inline-block">VOCALS & LYRICS</span>
+              </div>
+            </div>
+
+            <div class="p-6 relative z-10 flex-1 flex flex-col justify-between bg-obsidian/90 border-t border-white/5">
+              <div>
+                <h3 class="font-display text-2xl text-bone group-hover:text-gold transition-colors">shovik</h3>
+                <p class="text-xs text-smoke mt-2.5 leading-relaxed font-sans">Frontman and lyricist — writes the band's English and Bengali lyrics, behind OrPhEuS's darker, quieter moments.</p>
+              </div>
+
+              <div class="pt-5 mt-5 border-t border-white/10 flex items-center justify-between">
+                <span class="font-mono text-[11px] text-goldsoft/80 truncate">@shovik.music</span>
+                <a href="https://instagram.com/shovik.music" target="_blank" rel="noopener" aria-label="Shovik Instagram" class="w-9 h-9 rounded-full border border-gold/40 bg-gold/10 flex items-center justify-center text-gold group-hover:bg-gold group-hover:text-obsidian transition-colors shrink-0">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M7 17L17 7M17 7H7M17 7V17"/></svg>
+                </a>
+              </div>
+            </div>
+          </div>
+
+          <!-- Member 2: Ayushman -->
+          <div class="group glass-card rounded-2xl overflow-hidden border border-gold/20 hover:border-gold/80 transition-all duration-500 hover:-translate-y-2.5 hover:shadow-[0_20px_50px_rgba(217,164,65,0.18)] flex flex-col justify-between relative">
+            <div class="absolute top-3 right-3 z-20 font-mono text-xs text-gold font-bold bg-obsidian/90 px-3 py-1 rounded-md border border-gold/30 shadow-md">02</div>
+            
+            <div class="relative w-full aspect-[4/5] overflow-hidden bg-obsidian2">
+              <img src="assets/member2.jpeg" alt="Ayushman" class="w-full h-full object-cover filter grayscale contrast-110 group-hover:grayscale-0 group-hover:scale-105 transition-all duration-700 ease-out">
+              <div class="absolute inset-0 bg-gradient-to-t from-obsidian via-obsidian/30 to-transparent"></div>
+              <div class="absolute bottom-3 left-3 z-10">
+                <span class="font-mono text-[10px] text-gold uppercase tracking-widest px-2.5 py-1 rounded bg-obsidian/90 backdrop-blur-md border border-gold/30 inline-block">BASS & ARRANGEMENTS</span>
+              </div>
+            </div>
+
+            <div class="p-6 relative z-10 flex-1 flex flex-col justify-between bg-obsidian/90 border-t border-white/5">
+              <div>
+                <h3 class="font-display text-2xl text-bone group-hover:text-gold transition-colors">Ayushman</h3>
+                <p class="text-xs text-smoke mt-2.5 leading-relaxed font-sans">Holds down the low end and co-writes arrangements — turns rough ideas into full song structures.</p>
+              </div>
+
+              <div class="pt-5 mt-5 border-t border-white/10 flex items-center justify-between">
+                <span class="font-mono text-[11px] text-goldsoft/80 truncate">@AyushmanSarkar</span>
+                <a href="https://instagram.com/AyushmanSarkar" target="_blank" rel="noopener" aria-label="Ayushman Instagram" class="w-9 h-9 rounded-full border border-gold/40 bg-gold/10 flex items-center justify-center text-gold group-hover:bg-gold group-hover:text-obsidian transition-colors shrink-0">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M7 17L17 7M17 7H7M17 7V17"/></svg>
+                </a>
+              </div>
+            </div>
+          </div>
+
+          <!-- Member 3: Hrishi -->
+          <div class="group glass-card rounded-2xl overflow-hidden border border-gold/20 hover:border-gold/80 transition-all duration-500 hover:-translate-y-2.5 hover:shadow-[0_20px_50px_rgba(217,164,65,0.18)] flex flex-col justify-between relative">
+            <div class="absolute top-3 right-3 z-20 font-mono text-xs text-gold font-bold bg-obsidian/90 px-3 py-1 rounded-md border border-gold/30 shadow-md">03</div>
+            
+            <div class="relative w-full aspect-[4/5] overflow-hidden bg-obsidian2">
+              <img src="assets/member3.jpeg" alt="Hrishi" class="w-full h-full object-cover filter grayscale contrast-110 group-hover:grayscale-0 group-hover:scale-105 transition-all duration-700 ease-out">
+              <div class="absolute inset-0 bg-gradient-to-t from-obsidian via-obsidian/30 to-transparent"></div>
+              <div class="absolute bottom-3 left-3 z-10">
+                <span class="font-mono text-[10px] text-gold uppercase tracking-widest px-2.5 py-1 rounded bg-obsidian/90 backdrop-blur-md border border-gold/30 inline-block">DRUMS & PRODUCTION</span>
+              </div>
+            </div>
+
+            <div class="p-6 relative z-10 flex-1 flex flex-col justify-between bg-obsidian/90 border-t border-white/5">
+              <div>
+                <h3 class="font-display text-2xl text-bone group-hover:text-gold transition-colors">Hrishi</h3>
+                <p class="text-xs text-smoke mt-2.5 leading-relaxed font-sans">Keeps time and drives the rhythm — handles technical production work behind the scenes.</p>
+              </div>
+
+              <div class="pt-5 mt-5 border-t border-white/10 flex items-center justify-between">
+                <span class="font-mono text-[11px] text-goldsoft/80 truncate">@hrishi.drums</span>
+                <a href="https://instagram.com/hrishi.drums" target="_blank" rel="noopener" aria-label="Hrishi Instagram" class="w-9 h-9 rounded-full border border-gold/40 bg-gold/10 flex items-center justify-center text-gold group-hover:bg-gold group-hover:text-obsidian transition-colors shrink-0">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M7 17L17 7M17 7H7M17 7V17"/></svg>
+                </a>
+              </div>
+            </div>
+          </div>
+
+          <!-- Member 4: Nil -->
+          <div class="group glass-card rounded-2xl overflow-hidden border border-gold/20 hover:border-gold/80 transition-all duration-500 hover:-translate-y-2.5 hover:shadow-[0_20px_50px_rgba(217,164,65,0.18)] flex flex-col justify-between relative">
+            <div class="absolute top-3 right-3 z-20 font-mono text-xs text-gold font-bold bg-obsidian/90 px-3 py-1 rounded-md border border-gold/30 shadow-md">04</div>
+            
+            <div class="relative w-full aspect-[4/5] overflow-hidden bg-obsidian2">
+              <img src="assets/member4.jpeg" alt="Nil" class="w-full h-full object-cover filter grayscale contrast-110 group-hover:grayscale-0 group-hover:scale-105 transition-all duration-700 ease-out">
+              <div class="absolute inset-0 bg-gradient-to-t from-obsidian via-obsidian/30 to-transparent"></div>
+              <div class="absolute bottom-3 left-3 z-10">
+                <span class="font-mono text-[10px] text-gold uppercase tracking-widest px-2.5 py-1 rounded bg-obsidian/90 backdrop-blur-md border border-gold/30 inline-block">GUITARS & ACOUSTICS</span>
+              </div>
+            </div>
+
+            <div class="p-6 relative z-10 flex-1 flex flex-col justify-between bg-obsidian/90 border-t border-white/5">
+              <div>
+                <h3 class="font-display text-2xl text-bone group-hover:text-gold transition-colors">Nil</h3>
+                <p class="text-xs text-smoke mt-2.5 leading-relaxed font-sans">Brings the riffs and raw acoustic textures — tweaking tones late into the night.</p>
+              </div>
+
+              <div class="pt-5 mt-5 border-t border-white/10 flex items-center justify-between">
+                <span class="font-mono text-[11px] text-goldsoft/80 truncate">@__n_1_l__</span>
+                <a href="https://instagram.com/__n_1_l__" target="_blank" rel="noopener" aria-label="Nil Instagram" class="w-9 h-9 rounded-full border border-gold/40 bg-gold/10 flex items-center justify-center text-gold group-hover:bg-gold group-hover:text-obsidian transition-colors shrink-0">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M7 17L17 7M17 7H7M17 7V17"/></svg>
+                </a>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+    <!-- LOCATION -->
+    <section id="location" class="py-24 md:py-32 border-b border-white/10 bg-gradient-to-b from-obsidian via-[#161311] to-obsidian">
+      <div class="max-w-4xl mx-auto px-6 md:px-10 text-center">
+        <h3 class="font-display text-3xl md:text-4xl text-bone mb-2 glow-title">Where to find us</h3>
+        <p class="text-smoke text-sm mb-4">Currently recording and based in Kolkata, India</p>
+
+        <div class="inline-flex items-center gap-3 px-4 py-1.5 rounded-full bg-obsidian2 border border-gold/30 font-mono text-xs text-goldsoft mb-8">
+          <span class="text-smoke uppercase">KOLKATA TIME:</span>
+          <span id="kolkata-clock" class="text-gold font-bold">--:--:-- IST</span>
+        </div>
+
+        <div id="map" class="rounded-lg overflow-hidden border border-gold/30 shadow-2xl w-full"></div>
+      </div>
+    </section>
+
+    <!-- WORK WITH US -->
+    <section id="contact" class="py-24 md:py-32 border-b border-white/10 bg-gradient-to-b from-obsidian via-garnetdeep/30 to-obsidian">
+      <div class="max-w-6xl mx-auto px-6 md:px-10 grid md:grid-cols-2 gap-14 md:gap-20">
+
+        <div class="glass-card p-8 rounded-xl border border-gold/20 shadow-xl">
+          <div class="flex items-center justify-between mb-2">
+            <h3 class="font-display text-2xl md:text-3xl text-bone glow-title">Work with us</h3>
+            <span class="font-mono text-[10px] text-gold border border-gold/30 px-2 py-0.5 rounded uppercase">DIRECT EMAIL INBOX</span>
+          </div>
+          <p class="text-smoke text-sm mb-8 max-w-[46ch]">Art, music videos, visuals, collaborations — send us what you're making for the OrPhEuS era.</p>
+          
+          <form id="contact-form" class="space-y-4">
+            <input type="text" id="contact-name" placeholder="Your name" required class="field">
+            <input type="email" id="contact-email" placeholder="Email address" required class="field">
+            <textarea id="contact-proposal" rows="4" placeholder="Your portfolio or proposal details..." required class="field"></textarea>
+            <button type="submit" class="w-full bg-gradient-to-r from-garnet to-garnetdeep hover:from-gold hover:to-goldsoft text-bone hover:text-obsidian font-semibold py-3.5 rounded-md transition-all shadow-lg duration-300 flex items-center justify-center gap-2">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+              <span>Submit & Open Email</span>
+            </button>
+          </form>
+        </div>
+
+        <div class="flex flex-col justify-center">
+          <h3 class="font-display text-2xl md:text-3xl text-bone mb-8 glow-title">Press</h3>
+          <div class="space-y-8">
+            <blockquote class="press-quote glass-card p-6 rounded-r-lg">
+              <p class="text-bone/90 text-lg leading-snug">OrPhEuS is a masterclass in modern alternative rock — a deeply emotional, raw record.</p>
+              <cite class="block mt-3 text-sm text-goldsoft not-italic">Indie Sound Magazine</cite>
+            </blockquote>
+            <blockquote class="press-quote glass-card p-6 rounded-r-lg">
+              <p class="text-bone/90 text-lg leading-snug">Their visual and sonic aesthetic has completely evolved. A must-listen.</p>
+              <cite class="block mt-3 text-sm text-goldsoft not-italic">The Daily Beat</cite>
+            </blockquote>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- FOOTER -->
+    <footer class="py-16 bg-[#090706]">
+      <div class="max-w-7xl mx-auto px-6 md:px-10 flex flex-col md:flex-row items-center justify-between gap-8">
+        <div class="text-center md:text-left">
+          <p class="font-display text-xl text-bone mb-1 glow-title">OrPhEuS</p>
+          <a href="mailto:Orpheusrox25@gmail.com" class="text-smoke text-sm hover:text-gold transition-colors">Orpheusrox25@gmail.com</a>
+        </div>
+
+        <div class="flex items-center gap-6">
+          <a href="https://www.instagram.com/orpheus.true/?hl=en" target="_blank" rel="noopener noreferrer" aria-label="Instagram" class="text-bone/60 hover:text-gold transition-all transform hover:scale-110">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.2" cy="6.8" r="1"/></svg>
+          </a>
+          <a href="https://www.facebook.com/share/18BmBkiksw/" target="_blank" rel="noopener noreferrer" aria-label="Facebook" class="text-bone/60 hover:text-gold transition-all transform hover:scale-110">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M15 3h-2a4 4 0 0 0-4 4v3H7v4h2v7h4v-7h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg>
+          </a>
+        </div>
+
+        <p class="text-xs text-smoke font-mono">© 2026 OrPhEuS. All rights reserved.</p>
+      </div>
+    </footer>
+  </div>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script>
+    // MEDIA SECTOR DATA — MAPPED EXACTLY TO ASSETS SCREENSHOT
+    const GALLERY_CATEGORIES = [
+      {
+        id: 'live',
+        sectorTitle: 'Live Performances',
+        tag: 'STAGE & SHOWS',
+        badge: 'LIVE VIDEOS',
+        coverImg: 'assets/still1.jpg',
+        items: [
+          {
+            id: 'live-1',
+            type: 'video',
+            src: 'assets/live1.mp4',
+            title: 'Kolkata Stage Session',
+            desc: 'High energy live performance recorded live at Kolkata indie concert night.'
+          },
+          {
+            id: 'live-2',
+            type: 'video',
+            src: 'assets/live2.mp4',
+            title: 'Underworld Guitar Solo',
+            desc: 'Live acoustic & heavy electric solo performance under warm spotlights.'
+          },
+          {
+            id: 'live-3',
+            type: 'video',
+            src: 'assets/live3.mp4',
+            title: 'Stage Crowd Energy',
+            desc: 'Raw live footage capturing the dynamic response of our crowd.'
+          },
+          {
+            id: 'live-4',
+            type: 'video',
+            src: 'assets/live4.mp4',
+            title: 'Epic Stage Solo',
+            desc: 'High-energy guitar solo moment during live set.'
+          },
+          {
+            id: 'live-5',
+            type: 'video',
+            src: 'assets/live5.mp4',
+            title: 'Stage Crowd Energy',
+            desc: 'Raw live footage capturing the dynamic response of our crowd.'
+          },
+          {
+            id: 'live-6',
+            type: 'video',
+            src: 'assets/live6.mp4',
+            title: 'Rhythm & Bass Groove',
+            desc: 'Heavy low-end rhythm section drive live on stage.'
+          },
+          {
+            id: 'live-7',
+            type: 'video',
+            src: 'assets/live7.mp4',
+            title: 'Concert Finale Take',
+            desc: 'Atmospheric encore breakdown ending the night.'
+          }
+        ]
+      },
+      {
+        id: 'studio',
+        sectorTitle: 'Studio Sessions',
+        tag: 'BEHIND THE SCENES',
+        badge: 'STUDIO TRACKING',
+        coverImg: 'assets/still2.jpeg',
+        items: [
+          {
+            id: 'studio-1',
+            type: 'video',
+            src: 'assets/studio1.mp4',
+            title: 'Album Tracking Feed',
+            desc: 'Behind the scenes video inside the studio recording drums and heavy riffs.'
+          },
+          {
+            id: 'studio-2',
+            type: 'video',
+            src: 'assets/studio2.mp4',
+            title: 'Vocal Takes at 2 AM',
+            desc: 'Shovik tracking acoustic scratch vocals late night in the booth.'
+          }
+        ]
+      },
+      {
+        id: 'photos',
+        sectorTitle: 'Photos & Stills',
+        tag: 'VISUAL ARCHIVE',
+        badge: 'IMAGE STILLS',
+        coverImg: 'assets/still3.jpeg',
+        items: [
+          {
+            id: 'photo-1',
+            type: 'image',
+            src: 'assets/still1.jpg',
+            title: 'Stage Ambience Night',
+            desc: 'Capturing the deep red and gold atmospheric lighting of our crowd.'
+          },
+          {
+            id: 'photo-2',
+            type: 'image',
+            src: 'assets/still2.jpeg',
+            title: 'Backstage Moments',
+            desc: 'Quiet moments pre-show before heading out onto stage.'
+          },
+          {
+            id: 'photo-3',
+            type: 'image',
+            src: 'assets/still3.jpeg',
+            title: 'Official Band Portrait',
+            desc: 'Official still shot during the OrPhEuS debut album photoshoot.'
+          },
+          {
+            id: 'photo-4',
+            type: 'image',
+            src: 'assets/still4.jpeg',
+            title: 'Studio Gear Setup',
+            desc: 'Close-up shot of the vintage acoustic setup in the recording room.'
+          },
+          {
+            id: 'photo-5',
+            type: 'image',
+            src: 'assets/still5.jpeg',
+            title: 'Underground Venue Still',
+            desc: 'Atmospheric scene from the Kolkata underground concert venue.'
+          },
+          {
+            id: 'photo-6',
+            type: 'image',
+            src: 'assets/still6.jpeg',
+            title: 'Late Night Jam Still',
+            desc: 'Candid photo captured during a late-night acoustic rehearsal.'
+          },
+          {
+            id: 'photo-7',
+            type: 'image',
+            src: 'assets/still7.jpg',
+            title: 'Acoustic Detail Shot',
+            desc: 'Guitar detail shot captured during soundcheck.'
+          }
+        ]
+      },
+      {
+        id: 'covers',
+        sectorTitle: 'Covers & Acoustic Takes',
+        tag: 'ACOUSTIC REINTERPRETATIONS',
+        badge: 'COVER VIDEOS',
+        coverImg: 'assets/orpheus.jpeg',
+        items: [
+          {
+            id: 'cover-1',
+            type: 'video',
+            src: 'assets/reel1.mp4',
+            title: 'Acoustic Rock Cover Take',
+            desc: 'Raw acoustic guitar reinterpretation recorded live in Kolkata.'
+          },
+          {
+            id: 'cover-2',
+            type: 'video',
+            src: 'assets/reel2.mp4',
+            title: 'Unplugged Jam Session',
+            desc: 'Spontaneous late night cover jam session on dual acoustic guitars.'
+          },
+          {
+            id: 'cover-3',
+            type: 'video',
+            src: 'assets/reel3.mp4',
+            title: 'Bengali Acoustic Session',
+            desc: 'Stripped-down live acoustic rendition.'
+          },
+          {
+            id: 'cover-4',
+            type: 'video',
+            src: 'assets/reel4.mp4',
+            title: 'Midnight Acoustic Take',
+            desc: 'Atmospheric late-night acoustic session.'
+          }
+        ]
+      }
+    ];
+
+    // Contact Form Mailto
+    const contactForm = document.getElementById('contact-form');
+    contactForm?.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const name = document.getElementById('contact-name').value;
+      const email = document.getElementById('contact-email').value;
+      const proposal = document.getElementById('contact-proposal').value;
+      
+      const recipient = 'Orpheusrox25@gmail.com';
+      const subject = encodeURIComponent(`OrPhEuS Website Inquiry from ${name}`);
+      const body = encodeURIComponent(`Hello OrPhEuS Team,\n\nName: ${name}\nEmail: ${email}\n\nProposal / Inquiry:\n${proposal}\n\nSent via OrPhEuS Official Website`);
+      
+      window.location.href = `mailto:${recipient}?subject=${subject}&body=${body}`;
+    });
+
+    // Back to Top Button
+    const backToTopBtn = document.getElementById('back-to-top');
+    window.addEventListener('scroll', () => {
+      if (window.scrollY > 400) {
+        backToTopBtn?.classList.remove('opacity-0', 'pointer-events-none');
+        backToTopBtn?.classList.add('opacity-100', 'pointer-events-auto');
+      } else {
+        backToTopBtn?.classList.add('opacity-0', 'pointer-events-none');
+        backToTopBtn?.classList.remove('opacity-100', 'pointer-events-auto');
+      }
+    }, { passive: true });
+
+    backToTopBtn?.addEventListener('click', () => {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+
+    // Real-Time Kolkata Clock
+    function updateKolkataClock() {
+      const clockEl = document.getElementById('kolkata-clock');
+      if (!clockEl) return;
+      const options = { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true };
+      clockEl.textContent = new Intl.DateTimeFormat('en-US', options).format(new Date()) + ' IST';
+    }
+    setInterval(updateKolkataClock, 1000);
+    updateKolkataClock();
+
+    // 3D WebGL Canvas
+    (function init3dCanvas() {
+      try {
+        const canvas = document.getElementById('webgl-canvas');
+        if (!canvas || typeof THREE === 'undefined') return;
+
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.z = 30; camera.position.y = 10; camera.rotation.x = -0.3;
+
+        const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+        const amountX = 50, amountY = 50, separation = 1.6;
+        const numParticles = amountX * amountY;
+        const positions = new Float32Array(numParticles * 3);
+        const scales = new Float32Array(numParticles);
+
+        let i = 0, j = 0;
+        for (let ix = 0; ix < amountX; ix++) {
+          for (let iy = 0; iy < amountY; iy++) {
+            positions[i] = ix * separation - ((amountX * separation) / 2);
+            positions[i + 1] = 0;
+            positions[i + 2] = iy * separation - ((amountY * separation) / 2);
+            scales[j] = 1;
+            i += 3; j++;
+          }
+        }
+
+        const geometry = new THREE.BufferGeometry();
+        geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+        geometry.setAttribute('scale', new THREE.BufferAttribute(scales, 1));
+
+        const material = new THREE.PointsMaterial({
+          color: 0xD9A441, size: 0.35, transparent: true, opacity: 0.45, blending: THREE.AdditiveBlending
+        });
+
+        const particles = new THREE.Points(geometry, material);
+        scene.add(particles);
+
+        let count = 0, mouseX = 0, mouseY = 0;
+        window.addEventListener('mousemove', (e) => {
+          mouseX = (e.clientX - window.innerWidth / 2) * 0.0004;
+          mouseY = (e.clientY - window.innerHeight / 2) * 0.0004;
+        });
+
+        function animate() {
+          requestAnimationFrame(animate);
+          count += 0.03;
+          const posArr = geometry.attributes.position.array;
+          let i = 0;
+          for (let ix = 0; ix < amountX; ix++) {
+            for (let iy = 0; iy < amountY; iy++) {
+              posArr[i + 1] = (Math.sin((ix + count) * 0.3) * 2) + (Math.sin((iy + count) * 0.5) * 2);
+              i += 3;
+            }
+          }
+          geometry.attributes.position.needsUpdate = true;
+          particles.rotation.y += (mouseX - particles.rotation.y) * 0.05;
+          particles.rotation.x += (mouseY - particles.rotation.x) * 0.05;
+          renderer.render(scene, camera);
+        }
+        animate();
+
+        window.addEventListener('resize', () => {
+          camera.aspect = window.innerWidth / window.innerHeight;
+          camera.updateProjectionMatrix();
+          renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+      } catch (err) {
+        console.warn('3D background failed to load safely:', err);
+      }
+    })();
+
+    // Mobile nav
+    const menuBtn = document.getElementById('menu-btn');
+    const mobileMenu = document.getElementById('mobile-menu');
+    menuBtn?.addEventListener('click', () => mobileMenu.classList.toggle('hidden'));
+
+    // Nav scroll
+    const siteNav = document.getElementById('site-nav');
+    window.addEventListener('scroll', () => {
+      if (window.scrollY > 40) siteNav.classList.add('scrolled');
+      else siteNav.classList.remove('scrolled');
+    }, { passive: true });
+
+    // Accordion Gallery & Side Drawer
+    const accordionContainer = document.getElementById('drawer-accordion-container');
+    const sideDrawer = document.getElementById('side-drawer');
+    const drawerBackdrop = document.getElementById('drawer-backdrop');
+    const closeDrawerBtn = document.getElementById('close-drawer-btn');
+    const closeDrawerFooterBtn = document.getElementById('close-drawer-footer-btn');
+    
+    const drawerMediaIndex = document.getElementById('drawer-media-index');
+    const drawerMediaContainer = document.getElementById('drawer-media-container');
+    const drawerTitle = document.getElementById('drawer-title');
+    const drawerDesc = document.getElementById('drawer-desc');
+    const drawerPlaylistContainer = document.getElementById('drawer-playlist-container');
+    const sidePlaylistHeader = document.getElementById('side-playlist-header');
+
+    let drawerInactivityTimer = null;
+    const activeItemPerSector = {};
+    GALLERY_CATEGORIES.forEach(cat => { activeItemPerSector[cat.id] = cat.items[0]; });
+
+    function resetDrawerInactivityTimer() {
+      if (drawerInactivityTimer) clearTimeout(drawerInactivityTimer);
+      drawerInactivityTimer = setTimeout(() => {
+        if (!accordionContainer) return;
+        const cards = accordionContainer.querySelectorAll('.drawer-card');
+        cards.forEach(c => c.classList.remove('expanded'));
+      }, 5000);
+    }
+
+    function renderAccordionDrawers(expandedSectorId = null) {
+      if (!accordionContainer) return;
+
+      accordionContainer.innerHTML = GALLERY_CATEGORIES.map((cat, idx) => {
+        const activeItem = activeItemPerSector[cat.id] || cat.items[0];
+        const isExpanded = expandedSectorId === cat.id;
+
+        return `
+          <div class="drawer-card group ${isExpanded ? 'expanded' : ''}" data-sector="${cat.id}">
+            <div class="absolute inset-0 z-0 overflow-hidden pointer-events-none">
+              <img src="${cat.coverImg}" alt="${cat.sectorTitle}" class="w-full h-full object-cover filter brightness-[0.35] grayscale-[30%] group-hover:scale-105 group-hover:brightness-[0.45] transition-all duration-700">
+              <div class="absolute inset-0 bg-gradient-to-r from-obsidian via-obsidian/80 to-transparent"></div>
+              <div class="absolute inset-0 bg-gradient-to-t from-obsidian via-transparent to-obsidian/50"></div>
+            </div>
+
+            <div class="collapsed-header absolute inset-0 z-10 p-6 flex items-center justify-between">
+              <div class="flex items-center gap-6">
+                <span class="font-mono text-base text-gold font-bold bg-obsidian2/80 px-3 py-1 rounded-md border border-gold/30">0${idx + 1}</span>
+                <div>
+                  <span class="font-display text-2xl md:text-3xl text-bone block leading-tight drop-shadow-md">${cat.sectorTitle}</span>
+                  <span class="font-mono text-[10px] uppercase text-goldsoft tracking-widest">${cat.tag}</span>
+                </div>
+              </div>
+              <div class="flex items-center gap-4">
+                <span class="font-mono text-[11px] text-bone/90 uppercase tracking-wider bg-obsidian/80 backdrop-blur-md px-3 py-1 rounded-full border border-gold/30">${cat.items.length} ${cat.badge}</span>
+                <button class="expand-drawer-btn w-9 h-9 rounded-full border border-gold/40 bg-obsidian2/80 backdrop-blur-md flex items-center justify-center text-gold hover:bg-gold hover:text-obsidian transition-colors" aria-label="Expand Sector">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14m-7-7h14"/></svg>
+                </button>
+              </div>
+            </div>
+
+            <div class="expanded-content relative z-20 p-6 sm:p-8 flex flex-col gap-6">
+              <div class="flex items-center justify-between border-b border-white/10 pb-4">
+                <div class="flex items-center gap-3">
+                  <span class="font-mono text-xs uppercase tracking-widest text-gold px-3 py-1 rounded-full bg-gold/10 border border-gold/30">
+                    SECTOR 0${idx + 1} // ${cat.tag}
+                  </span>
+                  <span class="text-xs text-smoke font-mono hidden sm:inline-block">${cat.sectorTitle} Archive</span>
+                </div>
+                
+                <button class="inspect-sector-btn text-xs font-mono uppercase tracking-wider text-bone hover:text-gold flex items-center gap-2 border border-gold/30 px-4 py-1.5 rounded-full bg-obsidian/80 backdrop-blur-md hover:bg-gold/10 transition-colors">
+                  <span>Inspect Side Panel</span>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                </button>
+              </div>
+
+              <div class="grid lg:grid-cols-[1.5fr_1fr] gap-6 items-start">
+                <div class="relative w-full aspect-video rounded-xl overflow-hidden border border-gold/30 bg-black shadow-2xl flex items-center justify-center">
+                  ${activeItem.type === 'video'
+                    ? `<video src="${activeItem.src}" controls playsinline class="w-full h-full object-contain bg-black"></video>`
+                    : `<img src="${activeItem.src}" alt="${activeItem.title}" class="w-full h-full object-contain bg-black">`
+                  }
+                  <div class="absolute bottom-3 left-3 bg-obsidian/90 backdrop-blur-md px-3 py-1 rounded border border-gold/20 font-mono text-[11px] text-gold">
+                    ${activeItem.title}
+                  </div>
+                </div>
+
+                <div class="space-y-3">
+                  <div class="flex items-center justify-between font-mono text-xs text-goldsoft border-b border-white/5 pb-2">
+                    <span>${cat.sectorTitle.toUpperCase()} LIST</span>
+                    <span>${cat.items.length} ITEMS</span>
+                  </div>
+
+                  <div class="space-y-2 max-h-[320px] overflow-y-auto pr-1 custom-scrollbar">
+                    ${cat.items.map(item => `
+                      <div class="sector-item-card p-3 rounded-lg border ${item.id === activeItem.id ? 'border-gold bg-gold/10' : 'border-white/10 bg-obsidian2/80'} hover:border-gold/50 cursor-pointer transition-all flex items-center justify-between" data-itemid="${item.id}">
+                        <div class="flex items-center gap-3 overflow-hidden">
+                          <div class="w-10 h-10 rounded overflow-hidden shrink-0 border border-gold/30 bg-black flex items-center justify-center">
+                            ${item.type === 'video' 
+                              ? `<svg width="16" height="16" class="text-gold" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>`
+                              : `<svg width="16" height="16" class="text-gold" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>`
+                            }
+                          </div>
+                          <div class="truncate">
+                            <p class="font-sans text-sm font-medium text-bone truncate">${item.title}</p>
+                            <p class="font-mono text-[11px] text-smoke truncate">${item.desc}</p>
+                          </div>
+                        </div>
+                        <span class="font-mono text-[10px] text-gold/80 uppercase px-2 py-0.5 rounded border border-gold/20 shrink-0 ml-2">
+                          ${item.type}
+                        </span>
+                      </div>
+                    `).join('')}
+                  </div>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      attachDrawerEvents();
+    }
+
+    function attachDrawerEvents() {
+      const cards = accordionContainer.querySelectorAll('.drawer-card');
+      cards.forEach((card) => {
+        const sectorId = card.getAttribute('data-sector');
+        const categoryObj = GALLERY_CATEGORIES.find(c => c.id === sectorId);
+
+        const expandBtn = card.querySelector('.expand-drawer-btn');
+        expandBtn?.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const isAlreadyExpanded = card.classList.contains('expanded');
+          cards.forEach(c => c.classList.remove('expanded'));
+          if (!isAlreadyExpanded) {
+            card.classList.add('expanded');
+            resetDrawerInactivityTimer();
+          } else {
+            if (drawerInactivityTimer) clearTimeout(drawerInactivityTimer);
+          }
+        });
+
+        const itemCards = card.querySelectorAll('.sector-item-card');
+        itemCards.forEach(itemCard => {
+          itemCard.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const itemId = itemCard.getAttribute('data-itemid');
+            const selectedItem = categoryObj.items.find(i => i.id === itemId);
+            if (selectedItem) {
+              activeItemPerSector[sectorId] = selectedItem;
+              renderAccordionDrawers(sectorId);
+              resetDrawerInactivityTimer();
+            }
+          });
+        });
+
+        const inspectBtn = card.querySelector('.inspect-sector-btn');
+        inspectBtn?.addEventListener('click', (e) => {
+          e.stopPropagation();
+          openSideDrawer(categoryObj, activeItemPerSector[sectorId] || categoryObj.items[0]);
+        });
+      });
+    }
+
+    if (accordionContainer) {
+      ['mousemove', 'click', 'scroll', 'touchstart', 'keydown'].forEach(evt => {
+        accordionContainer.addEventListener(evt, () => {
+          const anyExpanded = accordionContainer.querySelector('.drawer-card.expanded');
+          if (anyExpanded) resetDrawerInactivityTimer();
+        }, { passive: true });
+      });
+
+      accordionContainer.addEventListener('mouseleave', () => {
+        if (drawerInactivityTimer) clearTimeout(drawerInactivityTimer);
+        const cards = accordionContainer.querySelectorAll('.drawer-card');
+        cards.forEach(c => c.classList.remove('expanded'));
+      });
+    }
+
+    function openSideDrawer(category, currentActiveItem) {
+      if (!category) return;
+
+      drawerMediaIndex.textContent = `SECTOR INSPECT // ${category.sectorTitle.toUpperCase()}`;
+      sidePlaylistHeader.textContent = `${category.sectorTitle} PLAYLIST (${category.items.length})`;
+
+      function updateSideDrawerMedia(item) {
+        drawerTitle.textContent = item.title;
+        drawerDesc.textContent = item.desc;
+
+        if (item.type === 'video') {
+          drawerMediaContainer.innerHTML = `<video src="${item.src}" controls autoplay playsinline class="w-full h-full object-contain bg-black"></video>`;
+        } else {
+          drawerMediaContainer.innerHTML = `<img src="${item.src}" alt="${item.title}" class="w-full h-full object-contain bg-black">`;
+        }
+
+        drawerPlaylistContainer.innerHTML = category.items.map(it => `
+          <div class="side-playlist-item p-3 rounded-lg border ${it.id === item.id ? 'border-gold bg-gold/10' : 'border-white/10 bg-obsidian2/90'} hover:border-gold/50 cursor-pointer transition-all flex items-center justify-between" data-itemid="${it.id}">
+            <div class="flex items-center gap-3 overflow-hidden">
+              <span class="font-mono text-xs text-gold">${it.type === 'video' ? '▶' : '📷'}</span>
+              <div class="truncate">
+                <p class="font-sans text-xs font-medium text-bone truncate">${it.title}</p>
+                <p class="font-mono text-[10px] text-smoke truncate">${it.desc}</p>
+              </div>
+            </div>
+            <span class="font-mono text-[9px] uppercase tracking-wider text-goldsoft px-2 py-0.5 border border-gold/20 rounded">SELECT</span>
+          </div>
+        `).join('');
+
+        drawerPlaylistContainer.querySelectorAll('.side-playlist-item').forEach(el => {
+          el.addEventListener('click', () => {
+            const chosenId = el.getAttribute('data-itemid');
+            const newChosenItem = category.items.find(i => i.id === chosenId);
+            if (newChosenItem) {
+              activeItemPerSector[category.id] = newChosenItem;
+              updateSideDrawerMedia(newChosenItem);
+              renderAccordionDrawers(category.id);
+            }
+          });
+        });
+      }
+
+      updateSideDrawerMedia(currentActiveItem || category.items[0]);
+      sideDrawer.classList.remove('translate-x-full');
+      drawerBackdrop.classList.remove('opacity-0', 'pointer-events-none');
+    }
+
+    function closeSideDrawer() {
+      sideDrawer.classList.add('translate-x-full');
+      drawerBackdrop.classList.add('opacity-0', 'pointer-events-none');
+      if (drawerMediaContainer) drawerMediaContainer.innerHTML = '';
+    }
+
+    closeDrawerBtn?.addEventListener('click', closeSideDrawer);
+    closeDrawerFooterBtn?.addEventListener('click', closeSideDrawer);
+    drawerBackdrop?.addEventListener('click', closeSideDrawer);
+
+    renderAccordionDrawers();
+
+    // Typewriter loop
+    const TYPEWRITER_LINES = [
+      'the new album.',
+      'live sessions from kolkata.',
+      'descend into the sound.',
+      'raw. cinematic. unfinished.',
+    ];
+    const twEl = document.getElementById('typewriter');
+    function typewriterLoop(el, lines) {
+      if (!el) return;
+      let lineIndex = 0, charIndex = 0, deleting = false;
+      const tick = () => {
+        const currentLine = lines[lineIndex];
+        if (!deleting) {
+          charIndex++;
+          el.textContent = currentLine.slice(0, charIndex);
+          if (charIndex === currentLine.length) { deleting = true; return setTimeout(tick, 1600); }
+          return setTimeout(tick, 55);
+        }
+        charIndex--;
+        el.textContent = currentLine.slice(0, charIndex);
+        if (charIndex === 0) {
+          deleting = false;
+          lineIndex = (lineIndex + 1) % lines.length;
+          return setTimeout(tick, 400);
+        }
+        return setTimeout(tick, 30);
+      };
+      tick();
+    }
+    typewriterLoop(twEl, TYPEWRITER_LINES);
+
+    // About Cycler
+    const ABOUT_PHRASES = [
+      '"Creating dark, raw acoustic depth."',
+      '"Rooted in Kolkata\'s underground noise."',
+      '"English and Bengali lyricism combined."',
+      '"Playing loud before the lights go out."'
+    ];
+    const aboutCyclerEl = document.getElementById('about-cycler');
+    if (aboutCyclerEl) {
+      let phraseIdx = 0;
+      setInterval(() => {
+        phraseIdx = (phraseIdx + 1) % ABOUT_PHRASES.length;
+        aboutCyclerEl.style.opacity = '0';
+        setTimeout(() => {
+          aboutCyclerEl.textContent = ABOUT_PHRASES[phraseIdx];
+          aboutCyclerEl.style.opacity = '1';
+        }, 300);
+      }, 4000);
+    }
+
+    // Audio Player Controls
+    const audio = document.getElementById('audio-player');
+    const playBtn = document.getElementById('play-btn');
+    const playIcon = document.getElementById('play-icon');
+    const pauseIcon = document.getElementById('pause-icon');
+    const progressTrack = document.getElementById('progress-track');
+    const progressFill = document.getElementById('progress-fill');
+    const timeCurrentEl = document.getElementById('time-current');
+    const timeDurationEl = document.getElementById('time-duration');
+    const audioLiveIndicator = document.getElementById('audio-live-indicator');
+    const audioStatusBadge = document.getElementById('audio-status-badge');
+    const playerContainer = document.getElementById('player-container');
+    const equalizer = document.getElementById('equalizer');
+
+    function formatTime(seconds) {
+      if (!isFinite(seconds)) return '0:00';
+      const m = Math.floor(seconds / 60);
+      const s = Math.floor(seconds % 60).toString().padStart(2, '0');
+      return `${m}:${s}`;
+    }
+
+    if (audio && playBtn) {
+      playBtn.addEventListener('click', () => {
+        if (audio.paused) audio.play(); else audio.pause();
+      });
+
+      audio.addEventListener('play', () => {
+        playIcon.classList.add('hidden'); pauseIcon.classList.remove('hidden');
+        playerContainer?.classList.add('is-playing');
+        equalizer?.classList.remove('hidden');
+        if (audioLiveIndicator) audioLiveIndicator.textContent = 'AUDIO ENGINE: STREAMING SNIPPET...';
+        if (audioStatusBadge) audioStatusBadge.textContent = 'PLAYING NOW';
+      });
+
+      audio.addEventListener('pause', () => {
+        playIcon.classList.remove('hidden'); pauseIcon.classList.add('hidden');
+        playerContainer?.classList.remove('is-playing');
+        equalizer?.classList.add('hidden');
+        if (audioLiveIndicator) audioLiveIndicator.textContent = 'AUDIO ENGINE: PAUSED';
+        if (audioStatusBadge) audioStatusBadge.textContent = 'PAUSED';
+      });
+
+      audio.addEventListener('loadedmetadata', () => {
+        timeDurationEl.textContent = formatTime(audio.duration);
+      });
+
+      audio.addEventListener('timeupdate', () => {
+        const pct = (audio.currentTime / audio.duration) * 100 || 0;
+        progressFill.style.width = `${pct}%`;
+        timeCurrentEl.textContent = formatTime(audio.currentTime);
+      });
+
+      progressTrack?.addEventListener('click', (e) => {
+        const rect = progressTrack.getBoundingClientRect();
+        const ratio = (e.clientX - rect.left) / rect.width;
+        if (isFinite(audio.duration)) audio.currentTime = ratio * audio.duration;
+      });
+    }
+
+    // Map (Kolkata)
+    const KOLKATA_COORDS = [22.5726, 88.3639];
+    const mapEl = document.getElementById('map');
+    if (mapEl) {
+      try {
+        if (typeof L === 'undefined') throw new Error('Leaflet failed to load');
+        const map = L.map(mapEl, { scrollWheelZoom: false }).setView(KOLKATA_COORDS, 12);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+          attribution: '&copy; OpenStreetMap contributors', maxZoom: 19,
+        }).addTo(map);
+
+        L.marker(KOLKATA_COORDS).addTo(map)
+          .bindPopup('<b>OrPhEuS</b><br>Kolkata, India').openPopup();
+
+        setTimeout(() => map.invalidateSize(), 300);
+      } catch (err) {
+        mapEl.innerHTML = `<div class="p-6 text-center text-smoke">Map preview unavailable</div>`;
+      }
+    }
+  </script>
+</body>
+</html>
